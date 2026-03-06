@@ -1,0 +1,19 @@
+{
+  "schedule": {
+    "trigger_time": "17:00",
+    "timezone": "Europe/Moscow",
+    "retry_interval_minutes": 60,
+    "stop_after_hour": 0
+  },
+  "tools": [
+    {
+      "id": "telegram_assistant",
+      "name": "Telegram Assistant",
+      "description": "Scan channels, generate comments, review & post",
+      "working_dir": "~/telegram-assistant",
+      "venv": "venv",
+      "command": "python review_bot.py",
+      "terminal": true
+    }
+  ]
+}
