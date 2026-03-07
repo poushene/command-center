@@ -1,13 +1,15 @@
 # Command Center — Daily Reference
 
 ## How it works
-- launchd runs `command_center.py` every hour
+- launchd triggers `command_center.py` at fixed hours (14:00–21:00 local time)
 - Script checks: is it 17:00–midnight Moscow time? Did I already act today?
 - If both pass → macOS dialog pops up → you choose to Run or Not now
-- "Not now" → dialog comes back in 1 hour
+- "Not now" → dialog comes back at the next hour
 - "Run" → Terminal opens with the tool, no more reminders today
+- If Mac was asleep at trigger time, launchd catches up when Mac wakes
 
 ## Daily commands
+
 ```bash
 # Check what's going on
 python3 ~/command-center/command_center.py --status
@@ -29,6 +31,7 @@ echo "" > /tmp/command-center.log
 ```
 
 ## Scheduler management
+
 ```bash
 # Stop the scheduler
 launchctl unload ~/Library/LaunchAgents/com.command-center.daily.plist
@@ -40,8 +43,14 @@ launchctl load ~/Library/LaunchAgents/com.command-center.daily.plist
 launchctl list | grep command-center
 ```
 
+## Timezone note
+
+The plist fires at 14:00–21:00 **local Mac time** (Lithuania). The script itself checks Moscow time (always UTC+3) to decide whether to show the dialog. Lithuania shifts between UTC+2 (winter) and UTC+3 (summer), so during winter the plist covers 16:00–23:00 Moscow, during summer 17:00–00:00 Moscow. The script handles this correctly — extra runs outside the Moscow window just exit silently.
+
 ## Adding a new tool
+
 Edit `~/command-center/tools_config.json`, add to the `tools` array:
+
 ```json
 {
   "id": "my_new_tool",
@@ -53,15 +62,17 @@ Edit `~/command-center/tools_config.json`, add to the `tools` array:
   "terminal": true
 }
 ```
+
 No other changes needed — the dialog picks it up automatically.
 
 ## Files
+
 ```
 ~/command-center/
-├── tools_config.json          # tools & schedule config
-├── command_center.py          # the brain
-├── com.command-center.daily.plist  # launchd scheduler
-├── README.md                  # this file
+├── tools_config.json               # Tools registry & schedule config
+├── command_center.py               # Reminder logic, macOS dialogs, tool launcher
+├── com.command-center.daily.plist  # launchd scheduler (fires hourly 14–21 local)
+├── README.md                       # This file
 └── state/
-    └── last_acted.txt         # tracks "did I act today?"
+    └── last_acted.txt              # Tracks "did user act today?"
 ```

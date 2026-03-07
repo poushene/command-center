@@ -13,8 +13,57 @@
         <string>/Users/serj/command-center/command_center.py</string>
     </array>
 
-    <key>StartInterval</key>
-    <integer>3600</integer>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>14</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>15</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>16</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>17</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>18</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>19</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>20</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>21</integer>
+        </dict>
+    </array>
 
     <key>StandardOutPath</key>
     <string>/tmp/command-center.log</string>
