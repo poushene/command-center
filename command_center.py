@@ -26,6 +26,11 @@ CONFIG_PATH = SCRIPT_DIR / "tools_config.json"
 LAST_ACTED_PATH = SCRIPT_DIR / "state" / "last_acted.txt"
 
 
+def _escape_applescript(text: str) -> str:
+    """Escape quotes and backslashes for safe embedding in AppleScript strings."""
+    return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def load_config():
     with open(CONFIG_PATH) as f:
         return json.load(f)
@@ -45,6 +50,10 @@ def already_acted_today(tz_name):
         return False
     last_date = LAST_ACTED_PATH.read_text().strip()
     today = now_in_tz(tz_name).strftime("%Y-%m-%d")
+    # If the state file has unexpected content, treat as "not acted" to avoid
+    # suppressing reminders due to a corrupted value.
+    if len(last_date) != 10:
+        return False
     return last_date == today
 
 
@@ -71,10 +80,11 @@ def show_dialog(tools):
 
     if len(tools) == 1:
         t = tools[0]
+        name = _escape_applescript(t["name"])
+        desc = _escape_applescript(t["description"])
         script = (
             'display dialog '
-            f'"🛠 Daily Tools\\n\\n{t["name"]}\\n{t["description"]}\\n\\n'
-            f'Run it now?" '
+            f'"Daily Tools\\n\\n{name}\\n{desc}\\n\\nRun it now?" '
             'buttons {"Not now", "Run"} default button "Run" '
             'with title "Command Center"'
         )
@@ -87,12 +97,13 @@ def show_dialog(tools):
         return []
 
     else:
-        names = '", "'.join(t["name"] for t in tools)
+        escaped_names = [_escape_applescript(t["name"]) for t in tools]
+        names = '", "'.join(escaped_names)
         script = (
             f'set toolList to {{"{names}"}}\n'
             'set chosen to choose from list toolList '
             'with title "Command Center" '
-            'with prompt "🛠 Daily Tools\\n\\nSelect tools to run:" '
+            'with prompt "Daily Tools\\n\\nSelect tools to run:" '
             'OK button name "Run Selected" '
             'cancel button name "Not now" '
             'with multiple selections allowed\n'
@@ -188,6 +199,25 @@ def show_status():
     print()
 
 
+def self_check():
+    """Print a quick diagnostic summary for troubleshooting."""
+    config = load_config()
+    schedule = config["schedule"]
+    tz = schedule["timezone"]
+    now = now_in_tz(tz)
+    in_window = in_reminder_window(schedule)
+    acted = already_acted_today(tz)
+
+    print("═══ Command Center Self-check ═══")
+    print(f"  Timezone:         {tz}")
+    print(f"  Current time:     {now.strftime('%Y-%m-%d %H:%M')}")
+    print(f"  Trigger time:     {schedule['trigger_time']}")
+    stop_label = "midnight" if schedule["stop_after_hour"] == 0 else f"{schedule['stop_after_hour']}:00"
+    print(f"  Stop after:       {stop_label}")
+    print(f"  In window now?:   {'yes' if in_window else 'no'}")
+    print(f"  Acted today?:     {'yes' if acted else 'no'}")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -227,6 +257,10 @@ def parse_args():
         "--status", action="store_true",
         help="show current settings, time window, and whether you acted today"
     )
+    parser.add_argument(
+        "--self-check", action="store_true",
+        help="quick diagnostic: show timezone, current time, window status, and acted-today flag"
+    )
     return parser.parse_args()
 
 
@@ -240,6 +274,10 @@ def main():
 
     if args.status:
         show_status()
+        return
+
+    if args.self_check:
+        self_check()
         return
 
     if args.reset:
@@ -284,7 +322,10 @@ def main():
     selected = show_dialog(tools)
 
     if not selected:
-        log(f"User chose 'Not now'. Will retry in {schedule['retry_interval_minutes']} min.")
+        if args.test:
+            log("User chose 'Not now' in --test mode (no automatic retry).")
+        else:
+            log(f"User chose 'Not now'. Will retry in {schedule['retry_interval_minutes']} min.")
         sys.exit(0)
 
     log(f"Selected: {', '.join(selected)}")

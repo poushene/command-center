@@ -1,27 +1,31 @@
 # Command Center — Daily Reference
 
 ## How it works
-- launchd triggers `command_center.py` at fixed hours (14:00–21:00 local time)
-- Script checks: is it 17:00–midnight Moscow time? Did I already act today?
-- If both pass → macOS dialog pops up → you choose to Run or Not now
-- "Not now" → dialog comes back at the next hour
-- "Run" → Terminal opens with the tool, no more reminders today
-- If Mac was asleep at trigger time, launchd catches up when Mac wakes
+- **Scheduler**: macOS `launchd` runs `command_center.py` every hour from 14:00–21:00 **local Mac time**.
+- **Time window**: the script decides to show a dialog only if the current time in `Europe/Moscow` is between **17:00 and midnight**.
+- **Once per day**: after you choose **Run** at least once, it remembers this in `state/last_acted.txt` and stays quiet until the next day (Moscow date).
+- **“Not now” during real runs**: if you click **Not now** during the window, you will be asked again on the next hourly run while the window is still open.
+- **Sleep handling**: if the Mac was asleep at a scheduled time, `launchd` will run the job shortly after wake; the script re-checks the Moscow window and state then.
 
 ## Daily commands
 
 ```bash
-# Check what's going on
-python3 ~/command-center/command_center.py --status
+cd ~/Projects/command-center
+
+# Check what's going on (config, window, acted-today flag)
+python3 command_center.py --status
+
+# Quick self-check (Moscow time, window, acted-today)
+python3 command_center.py --self-check
 
 # Force the dialog right now (ignores time & acted state)
-python3 ~/command-center/command_center.py --test
+python3 command_center.py --test
 
 # Change trigger time (Moscow time)
-python3 ~/command-center/command_center.py --set-time 18:30
+python3 command_center.py --set-time 18:30
 
 # Re-enable reminders after you already ran today
-python3 ~/command-center/command_center.py --reset
+python3 command_center.py --reset
 
 # Check the log (what launchd runs look like)
 cat /tmp/command-center.log
@@ -36,7 +40,7 @@ echo "" > /tmp/command-center.log
 # Stop the scheduler
 launchctl unload ~/Library/LaunchAgents/com.command-center.daily.plist
 
-# Start the scheduler
+# Start (or reload) the scheduler
 launchctl load ~/Library/LaunchAgents/com.command-center.daily.plist
 
 # Check if it's running
@@ -45,11 +49,14 @@ launchctl list | grep command-center
 
 ## Timezone note
 
-The plist fires at 14:00–21:00 **local Mac time** (Lithuania). The script itself checks Moscow time (always UTC+3) to decide whether to show the dialog. Lithuania shifts between UTC+2 (winter) and UTC+3 (summer), so during winter the plist covers 16:00–23:00 Moscow, during summer 17:00–00:00 Moscow. The script handles this correctly — extra runs outside the Moscow window just exit silently.
+- **Scheduler timezone**: the plist fires at 14:00–21:00 **local Mac time** (e.g. Lithuania).
+- **Logic timezone**: the Python script always uses `Europe/Moscow` (UTC+3) from `tools_config.json` to decide whether to show the dialog.
+- **DST effects**: when Lithuania is UTC+2 (winter), 14:00–21:00 local covers roughly 16:00–23:00 Moscow; when Lithuania is UTC+3 (summer), it covers 17:00–00:00 Moscow.
+- **Extra runs**: if `launchd` runs the script outside the Moscow window, it simply logs “Outside reminder window. Exiting.” and does nothing.
 
 ## Adding a new tool
 
-Edit `~/command-center/tools_config.json`, add to the `tools` array:
+Edit `~/Projects/command-center/tools_config.json`, add to the `tools` array:
 
 ```json
 {
@@ -68,7 +75,7 @@ No other changes needed — the dialog picks it up automatically.
 ## Files
 
 ```
-~/command-center/
+~/Projects/command-center/
 ├── tools_config.json               # Tools registry & schedule config
 ├── command_center.py               # Reminder logic, macOS dialogs, tool launcher
 ├── com.command-center.daily.plist  # launchd scheduler (fires hourly 14–21 local)

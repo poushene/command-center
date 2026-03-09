@@ -10,7 +10,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/python3</string>
-        <string>/Users/serj/command-center/command_center.py</string>
+        <string>/Users/serj/Projects/command-center/command_center.py</string>
     </array>
 
     <key>StartCalendarInterval</key>
