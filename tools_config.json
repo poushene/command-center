@@ -10,7 +10,7 @@
       "id": "telegram_assistant",
       "name": "Telegram Assistant",
       "description": "Scan channels, generate comments, review & post",
-      "working_dir": "~/telegram-assistant",
+      "working_dir": "~/Projects/telegram-assistant",
       "venv": "venv",
       "command": "python review_bot.py",
       "terminal": true
