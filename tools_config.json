@@ -12,7 +12,7 @@
       "description": "Scan channels, generate comments, review & post",
       "working_dir": "~/Projects/telegram-assistant",
       "venv": "venv",
-      "command": "python review_bot.py",
+      "command": "python3 review_bot.py",
       "terminal": true
     }
   ]
